@@ -1,1 +1,2 @@
 Deployment trigger - July 21, 2025
+Updated: July 21, 2025 - Fixed workflow
