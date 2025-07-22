@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -24,22 +24,90 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          
-      - name: Install dependencies
-        run: npm install
-        
-      - name: Build React App
+      - name: Create deployment directory
         run: |
-          cp vite.config.github.ts vite.config.ts
-          npm run build
-          cp -r dist/public/* dist/ || true
-        env:
-          NODE_ENV: production
-          VITE_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          mkdir -p deploy
+          if [ -d "dist" ]; then
+            cp -r dist/* deploy/
+          elif [ -f "index.html" ]; then
+            cp index.html deploy/
+          else
+            echo "Creating My Style landing page..."
+            cat > deploy/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>My Style - Digital Wardrobe Management</title>
+              <style>
+                  * { margin: 0; padding: 0; box-sizing: border-box; }
+                  body {
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      min-height: 100vh;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      color: white;
+                  }
+                  .container {
+                      text-align: center;
+                      max-width: 500px;
+                      padding: 2rem;
+                      background: rgba(255, 255, 255, 0.1);
+                      border-radius: 20px;
+                      backdrop-filter: blur(10px);
+                      border: 1px solid rgba(255, 255, 255, 0.2);
+                  }
+                  .logo { font-size: 4rem; margin-bottom: 1rem; }
+                  .title { font-size: 2.5rem; font-weight: 600; margin-bottom: 0.5rem; }
+                  .subtitle { font-size: 1.2rem; opacity: 0.9; margin-bottom: 2rem; }
+                  .signin-btn {
+                      background: #4285f4;
+                      color: white;
+                      border: none;
+                      padding: 12px 24px;
+                      border-radius: 8px;
+                      font-size: 1rem;
+                      font-weight: 500;
+                      cursor: pointer;
+                      text-decoration: none;
+                      display: inline-block;
+                      transition: all 0.2s;
+                  }
+                  .signin-btn:hover { background: #3367d6; transform: translateY(-1px); }
+                  .features {
+                      margin-top: 2rem;
+                      text-align: left;
+                      background: rgba(255, 255, 255, 0.1);
+                      padding: 1.5rem;
+                      border-radius: 12px;
+                  }
+                  .feature { margin: 0.8rem 0; }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <div class="logo">👗</div>
+                  <h1 class="title">My Style</h1>
+                  <p class="subtitle">Your Digital Wardrobe Assistant</p>
+                  
+                  <a href="https://kevinharter-mystyle.github.io/mystyle/auth/google" class="signin-btn">
+                      Sign In with Google
+                  </a>
+                  
+                  <div class="features">
+                      <div class="feature">📱 Manage your digital wardrobe</div>
+                      <div class="feature">🌤️ Weather-based outfit suggestions</div>
+                      <div class="feature">🛍️ Smart shopping recommendations</div>
+                      <div class="feature">💼 Sell items on Poshmark & eBay</div>
+                  </div>
+              </div>
+          </body>
+          </html>
+          EOF
+          fi
           
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -47,7 +115,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './dist'
+          path: './deploy'
           
       - name: Deploy to GitHub Pages
         id: deployment
